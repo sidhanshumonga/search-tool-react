@@ -4,6 +4,7 @@
 /dist
 /tmp
 /out-tsc
+/search-tool
 
 # dependencies
 /node_modules

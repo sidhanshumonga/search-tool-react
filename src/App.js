@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Row, Col } from 'react-bootstrap'
+import { Form, Row, Col, Tooltip } from 'react-bootstrap'
 import './App.css';
 import PhotosGrid from './components/Photos-grid/Photos-grid'
 import { logo } from './logo.svg'
@@ -10,13 +10,16 @@ const initialState = { value: '', photos: [], loading: false, apiPageCount: 1, t
 class App extends React.Component {
   constructor() {
     super();
-    this.state = initialState
+    this.state = { ...initialState, history: [] }
   }
 
-  fetchPhotos = _.debounce(() => {
-    axios.get('https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=3b8da0e5c9ae44b2d9c8f009a21f8929&text=' + this.state.value + '&format=json&nojsoncallback=1&page=' + this.state.apiPageCount)
+  fetchPhotos = _.debounce((flag) => {
+    axios.get('https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=3b8da0e5c9ae44b2d9c8f009a21f8929&text=' + this.state.value + '&format=json&safe_search=3&nojsoncallback=1&page=' + this.state.apiPageCount)
       .then(response => {
-        this.setState({ photos: [...this.state.photos, ...response.data.photos.photo], loading: false, totalPages: response.data.photos.pages, scrolled: false })
+        if (response.data.photos) {
+          this.setState({ photos: flag ? [...response.data.photos.photo] : [...this.state.photos, ...response.data.photos.photo], loading: false, totalPages: response.data.photos.pages, scrolled: false })
+          if (flag && this.state.value.length > 2) { this.saveToStorage(); this.recover(); }
+        }
       });
   }, 1000)
 
@@ -24,11 +27,16 @@ class App extends React.Component {
     this.setState({ value: e.target.value });
     if (e.target.value) {
       this.setState({ loading: true });
-      this.fetchPhotos();
+      this.fetchPhotos(true);
     }
     else {
       this.setState(initialState);
     }
+  }
+
+  updateSearch = (value) => {
+    this.setState({ value: value, loading: true });
+    this.fetchPhotos(true);
   }
 
   _handleKeyDown = (e) => {
@@ -55,8 +63,31 @@ class App extends React.Component {
     }
   }
 
+  recover() {
+    //parse the localstorage value
+    let data = JSON.parse(localStorage.getItem('history'));
+    if (data) {
+      this.setState({ history: data.length > 5 ? data.reverse().splice(0, 5) : data.reverse() });
+    }
+  }
+
+  saveToStorage = () => {
+    //local storage only takes in key value pair so you would have to serialize it.
+    let history = this.state.history ? [...this.state.history] : [];
+
+    if (!history.includes(this.state.value)) { history.push(this.state.value); }
+
+    localStorage.setItem('history', JSON.stringify(history));
+  }
+
+  clearStroage = () => {
+    localStorage.clear();
+    this.setState({ history: [], value: '', photos: [] });
+  }
+
   componentDidMount = () => {
     window.addEventListener('scroll', this.handleScroll);
+    this.recover();
   }
 
   componentWillUnmount = () => {
@@ -73,13 +104,18 @@ class App extends React.Component {
               <Form>
                 <Form.Control className="search-input" placeholder="Search images..." value={this.state.value} onChange={this.handleChange} onKeyDown={this._handleKeyDown} />
               </Form>
+              {this.state.history.length > 0 ? <div className="pt-2">
+                <h6 className="p-head">Previous Search: </h6>
+                {this.state.history.map((x) => <p key={x} className="p-tags mx-1" onClick={() => this.updateSearch(x)}>{x}</p>)}
+                <i className="material-icons clear-tags m-2" onClick={() => this.clearStroage()}>close</i>
+              </div> : null}
             </Col>
           </Row>
         </header>
-        <body className="App-body mt-3">
+        <div className="App-body mt-3">
           <PhotosGrid photos={this.state.photos} loading={this.state.loading} page={this.state.apiPageCount}></PhotosGrid>
           {this.state.loading ? <Loader className="loader-div"></Loader> : null}
-        </body>
+        </div>
       </div>
     );
   }

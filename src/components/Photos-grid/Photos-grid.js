@@ -18,7 +18,7 @@ export default class PhotosGrid extends Component {
 
         return (
             <div className="PhotosGrid">
-                {this.props.photos.length === 0 ? <h2>No photo found</h2> : this.props.photos.map((i) => <img className="m-2 photos" src={'https://farm' + i.farm + '.staticflickr.com/' + i.server + '/' + i.id + '_' + i.secret + '_z.jpg'} alt={i.title.split(' ')[0]} width="220px" height="220px" onClick={() => this.setModalShow(true, i)} />)}
+                {this.props.photos.length === 0 ? <h2>No photo found</h2> : this.props.photos.map((i) => <img key={i.id} className="m-2 photos" src={'https://farm' + i.farm + '.staticflickr.com/' + i.server + '/' + i.id + '_' + i.secret + '_z.jpg'} alt={i.title.split(' ')[0]} width="220px" height="220px" onClick={() => this.setModalShow(true, i)} />)}
                 {/* Loading image to show on scroll */}
                 {this.props.loading && this.props.page > 1 ? <img src={require('./loading.gif')} className='inline' width="420px" height="220px" /> : null}
                 <PhotoModal
