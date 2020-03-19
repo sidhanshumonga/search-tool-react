@@ -6,16 +6,13 @@ export default class PhotosGrid extends Component {
     constructor() {
         super();
         this.state = { modalShow: false, setModalShow: false, selected: null }
-        // this.setModalShow = this.setModalShow.bind(this)
     }
-
+    // method to show and hide modal
     setModalShow = (v, photo) => {
-        this.setState({modalShow: v, selected: photo});
+        this.setState({ modalShow: v, selected: photo });
     }
-    
-    render() {
-        // const 
 
+    render() {
         return (
             <div className="PhotosGrid">
                 {this.props.photos.length === 0 ? <h2>No photo found</h2> : this.props.photos.map((i) => <img key={i.id} className="m-2 photos" src={'https://farm' + i.farm + '.staticflickr.com/' + i.server + '/' + i.id + '_' + i.secret + '_z.jpg'} alt={i.title.split(' ')[0]} width="220px" height="220px" onClick={() => this.setModalShow(true, i)} />)}

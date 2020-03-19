@@ -3,8 +3,6 @@ import { Modal } from 'react-bootstrap';
 import './Photo-modal.css'
 
 export default class PhotoModal extends Component {
-
-
     render() {
         return (
             <Modal
