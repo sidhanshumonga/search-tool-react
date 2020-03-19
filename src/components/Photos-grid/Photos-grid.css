@@ -1,7 +1,9 @@
 .photos {
   transition: all 1s ease-in-out;
+  cursor: pointer;
 }
 
 .inline {
-    display: inline-block;
+    display: flex;
+    margin:auto;
 }

@@ -6,18 +6,17 @@ import { logo } from './logo.svg'
 import axios from 'axios';
 import _ from 'lodash';
 import Loader from './components/Loader/Loader'
-
+const initialState = { value: '', photos: [], loading: false, apiPageCount: 1, totalPages: 1, scrolled: false };
 class App extends React.Component {
-
   constructor() {
     super();
-    this.state = { value: '', photos: [], loading: false, apiPageCount: 1, totalPages: 1, scrolled: false }
+    this.state = initialState
   }
 
   fetchPhotos = _.debounce(() => {
     axios.get('https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=3b8da0e5c9ae44b2d9c8f009a21f8929&text=' + this.state.value + '&format=json&nojsoncallback=1&page=' + this.state.apiPageCount)
       .then(response => {
-        this.setState({ photos: [...this.state.photos, ...response.data.photos.photo], loading: false, totalPages: response.data.photos.pages, scrolled: false  })
+        this.setState({ photos: [...this.state.photos, ...response.data.photos.photo], loading: false, totalPages: response.data.photos.pages, scrolled: false })
       });
   }, 1000)
 
@@ -28,21 +27,20 @@ class App extends React.Component {
       this.fetchPhotos();
     }
     else {
-      this.setState({ photos: [], loading: false });
+      this.setState(initialState);
     }
   }
 
   _handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      console.log(e);
       this.handleChange(e);
     }
   }
 
-  isInViewport = ( offset = 0) => {
+  isInViewport = (offset = 0) => {
     let elements = document.getElementsByClassName('photos');
-    let element = elements[elements.length-1];
+    let element = elements[elements.length - 1];
     if (!element) return false;
     const top = element.getBoundingClientRect().top;
     return (top + offset) >= 0 && (top - offset) <= window.innerHeight;
@@ -50,8 +48,8 @@ class App extends React.Component {
 
 
   handleScroll = (event) => {
-    if(this.isInViewport() && this.state.apiPageCount <= this.state.totalPages && !this.state.scrolled){
-      this.setState({ apiPageCount: this.state.apiPageCount+1, loading: true, scrolled: true});
+    if (this.isInViewport() && this.state.apiPageCount <= this.state.totalPages && !this.state.scrolled) {
+      this.setState({ apiPageCount: this.state.apiPageCount + 1, loading: true, scrolled: true });
       this.fetchPhotos();
       return;
     }
