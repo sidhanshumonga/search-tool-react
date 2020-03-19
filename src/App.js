@@ -1,31 +1,68 @@
 import React from 'react';
 import { Form, Row, Col } from 'react-bootstrap'
 import './App.css';
-import PhotosGrid from './components/Photos-grid'
+import PhotosGrid from './components/Photos-grid/Photos-grid'
 import { logo } from './logo.svg'
 import axios from 'axios';
+import _ from 'lodash';
+import Loader from './components/Loader/Loader'
 
 class App extends React.Component {
 
   constructor() {
     super();
-    this.state = { value: '', photos: [] }
+    this.state = { value: '', photos: [], loading: false, apiPageCount: 1 }
   }
+
+  fetchPhotos = _.debounce(() => {
+    axios.get('https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=3b8da0e5c9ae44b2d9c8f009a21f8929&text=' + this.state.value + '&format=json&nojsoncallback=1&page=' + this.state.apiPageCount)
+      .then(response => {
+        this.setState({ photos: [...this.state.photos, ...response.data.photos.photo], loading: false })
+      });
+  }, 1000)
+
   handleChange = (e) => {
     this.setState({ value: e.target.value });
     if (e.target.value) {
-      axios.get('https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=3b8da0e5c9ae44b2d9c8f009a21f8929&text=' + e.target.value + '&format=json&nojsoncallback=1')
-        .then(response => {
-          this.setState({ photos: [...response.data.photos.photo] })
-        });
+      this.setState({ loading: true });
+      this.fetchPhotos();
     }
     else {
-      this.setState({ photos: [] });
+      this.setState({ photos: [], loading: false });
     }
   }
 
-  componentDidMount() {
+  _handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      console.log(e);
+      this.handleChange(e);
+    }
+  }
 
+  isInViewport = ( offset = 0) => {
+    let elements = document.getElementsByClassName('photos');
+    let element = elements[elements.length-1];
+    if (!element) return false;
+    const top = element.getBoundingClientRect().top;
+    return (top + offset) >= 0 && (top - offset) <= window.innerHeight;
+  }
+
+
+  handleScroll = (event) => {
+    if(this.isInViewport()){
+      this.setState({ apiPageCount: this.state.apiPageCount++, loading: true});
+      this.fetchPhotos();
+      return;
+    }
+  }
+
+  componentDidMount = () => {
+    window.addEventListener('scroll', this.handleScroll);
+  }
+
+  componentWillUnmount = () => {
+    window.removeEventListener('scroll', this.handleScroll);
   }
 
   render() {
@@ -36,13 +73,14 @@ class App extends React.Component {
             <Col>
               <h3 className="my-3">Search Photos</h3>
               <Form>
-                <Form.Control className="search-input" placeholder="Search images..." value={this.state.value} onChange={this.handleChange} autoComplete="on" />
+                <Form.Control className="search-input" placeholder="Search images..." value={this.state.value} onChange={this.handleChange} onKeyDown={this._handleKeyDown} />
               </Form>
             </Col>
           </Row>
         </header>
         <body className="App-body mt-3">
           <PhotosGrid photos={this.state.photos}></PhotosGrid>
+          {this.state.loading ? <Loader className="loader-div"></Loader> : null}
         </body>
       </div>
     );
