@@ -11,13 +11,13 @@ class App extends React.Component {
 
   constructor() {
     super();
-    this.state = { value: '', photos: [], loading: false, apiPageCount: 1 }
+    this.state = { value: '', photos: [], loading: false, apiPageCount: 1, totalPages: 1, scrolled: false }
   }
 
   fetchPhotos = _.debounce(() => {
     axios.get('https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=3b8da0e5c9ae44b2d9c8f009a21f8929&text=' + this.state.value + '&format=json&nojsoncallback=1&page=' + this.state.apiPageCount)
       .then(response => {
-        this.setState({ photos: [...this.state.photos, ...response.data.photos.photo], loading: false })
+        this.setState({ photos: [...this.state.photos, ...response.data.photos.photo], loading: false, totalPages: response.data.photos.pages, scrolled: false  })
       });
   }, 1000)
 
@@ -50,8 +50,8 @@ class App extends React.Component {
 
 
   handleScroll = (event) => {
-    if(this.isInViewport()){
-      this.setState({ apiPageCount: this.state.apiPageCount++, loading: true});
+    if(this.isInViewport() && this.state.apiPageCount <= this.state.totalPages && !this.state.scrolled){
+      this.setState({ apiPageCount: this.state.apiPageCount+1, loading: true, scrolled: true});
       this.fetchPhotos();
       return;
     }
@@ -79,7 +79,7 @@ class App extends React.Component {
           </Row>
         </header>
         <body className="App-body mt-3">
-          <PhotosGrid photos={this.state.photos}></PhotosGrid>
+          <PhotosGrid photos={this.state.photos} loading={this.state.loading} page={this.state.apiPageCount}></PhotosGrid>
           {this.state.loading ? <Loader className="loader-div"></Loader> : null}
         </body>
       </div>
